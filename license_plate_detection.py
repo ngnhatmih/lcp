@@ -30,6 +30,26 @@ def crop_plate(img, plate):
     save_image(resize, "resized_plate.jpg")
     return resize
 
+def compute_skew(image):
+    """Tính toán góc nghiêng của ảnh."""
+    h, w, _ = image.shape
+    img = cv2.medianBlur(image, 3)
+    edges = cv2.Canny(img, threshold1=30, threshold2=100, apertureSize=3, L2gradient=True)
+    lines = cv2.HoughLinesP(edges, 1, math.pi / 180, 30, minLineLength=w / 4.0, maxLineGap=h / 4.0)
+    
+    if lines is None:
+        return 0.0
+    
+    angle = 0.0
+    cnt = 0
+    for line in lines:
+        for x1, y1, x2, y2 in line:
+            ang = np.arctan2(y2 - y1, x2 - x1)
+            if math.fabs(ang) <= 30:
+                angle += ang
+                cnt += 1
+    return (angle / cnt) * 180 / math.pi if cnt != 0 else 0.0
+
 def deskew(image):
     """Xoay ảnh về trạng thái cân bằng."""
     angle = compute_skew(image)
